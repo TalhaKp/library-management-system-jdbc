@@ -3,16 +3,17 @@ package com.library.dao;
 import com.library.model.Book;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IBookDAO {
 
-    void add(Book book);
+    boolean add(Book book);
 
     List<Book> getAll(int limit, int offset);
 
-    Book getById(int id);
+    Optional<Book> getById(int id);
 
-    void update(Book book);
+    boolean update(Book book);
 
-    void delete(int id);
+    boolean delete(int id);
 }

@@ -3,98 +3,93 @@ package com.library.main;
 import com.library.dao.BookDAOImpl;
 import com.library.dao.IBookDAO;
 import com.library.model.Book;
-import java.util.List;
+import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) {
-        // DAO örneğini oluştur
         IBookDAO bookDAO = new BookDAOImpl();
 
-        System.out.println("=========== TEST BAŞLIYOR ===========");/*
+        System.out.println("==========================================");
+        System.out.println("🧪 DAO UPDATE & DELETE TEST SENARYOSU");
+        System.out.println("==========================================\n");
 
-        // ADIM 1: Önce veritabanına bir kitap ekleyelim (ki ID oluşsun)
-        Book myBook = new Book();
-        myBook.setTitle("Suç ve Ceza");
-        myBook.setAuthor("Dostoyevski");
-        myBook.setIsbn("1234567890");
-        myBook.setAvailable(true);
+        // ---------------------------------------------------------
+        // ADIM 1: Önce denek (Test) bir kitap ekleyelim
+        // ---------------------------------------------------------
+        System.out.println("1️⃣  [CREATE] Test kitabı ekleniyor...");
+        Book testBook = new Book();
+        testBook.setTitle("Silinecek Kitap");
+        testBook.setAuthor("Test Yazarı");
+        testBook.setIsbn("9781234567897");
+        testBook.setAvailable(true);
 
-        System.out.println("-> Kitap ekleniyor...");
-        bookDAO.add(myBook);
+        boolean isAdded = bookDAO.add(testBook);
+        int bookId = testBook.getId(); // DAO'da generated key aldığımız için ID set edildi.
 
-        // Senin add metodun book nesnesine ID'yi set ettiği için direkt alabiliriz:
-        int newId = myBook.getId();
-        System.out.println("-> Eklenen Kitabın ID'si: " + newId);
-
-        System.out.println("-------------------------------------");
-
-        // ADIM 2: getById (Read) Testi
-        System.out.println("-> ID ile okuma yapılıyor (ID: " + newId + ")...");*/
-        Book foundBook = bookDAO.getById(1);
-
-        if (foundBook != null) {
-            System.out.println("✅ BAŞARILI: Kitap veritabanından çekildi.");
-            System.out.println("   ID: " + foundBook.getId());
-            System.out.println("   Başlık: " + foundBook.getTitle());
-            System.out.println("   Yazar: " + foundBook.getAuthor());
-            System.out.println("   ISBN: " + foundBook.getIsbn());
+        if (isAdded && bookId > 0) {
+            System.out.println("✅  Kitap Eklendi! ID: " + bookId);
         } else {
-            System.out.println("❌ HATA: Eklenen kitap okunamadı (Null döndü)!");
-        }
-
-        System.out.println("-------------------------------------");
-
-        // ADIM 3: Olmayan ID Testi
-        int fakeId = 99999;
-        System.out.println("-> Olmayan ID ile okuma yapılıyor (ID: " + fakeId + ")...");
-        Book noBook = bookDAO.getById(fakeId);
-
-        if (noBook == null) {
-            System.out.println("✅ BAŞARILI: Olmayan kitap için null döndü.");
-        } else {
-            System.out.println("❌ HATA: Olmayan kitap için veri döndü! Mantık hatası.");
-        }
-
-        System.out.println("=========== TEST BİTTİ ===========");
-
-
-
-        System.out.println("=========== GET ALL (PAGINATION) TESTİ ===========");
-
-
-        int limit = 2;
-        int offset = 0;
-        System.out.println("-> SENARYO 1: Sayfa 1 isteniyor (Limit: " + limit + ", Offset: " + offset + ")");
-
-        List<Book> page1 = bookDAO.getAll(limit, offset);
-        printBooks(page1);
-
-        // ADIM 3: İkinci Sayfayı Çek (Limit: 2, Offset: 2)
-        // Beklenti: Sonraki 2 kitabı getirmeli (3. ve 4. kitaplar)
-        offset = 2;
-        System.out.println("\n-> SENARYO 2: Sayfa 2 isteniyor (Limit: " + limit + ", Offset: " + offset + ")");
-
-        List<Book> page2 = bookDAO.getAll(limit, offset);
-        printBooks(page2);
-
-        // ADIM 4: Kalanları Çek (Limit: 2, Offset: 4)
-        // Beklenti: 5. kitabı getirmeli (Sadece 1 tane kalmıştı)
-        offset = 4;
-        System.out.println("\n-> SENARYO 3: Sayfa 3 isteniyor (Limit: " + limit + ", Offset: " + offset + ")");
-
-        List<Book> page3 = bookDAO.getAll(limit, offset);
-        printBooks(page3);
-
-        System.out.println("\n=========== TEST BİTTİ ===========");
-
-    }
-    private static void printBooks(List<Book> books) {
-        if (books.isEmpty()) {
-            System.out.println("   [Liste Boş]");
+            System.out.println("❌  Kitap eklenemedi, test iptal!");
             return;
         }
-        for (Book b : books) {
-            System.out.println("   - ID: " + b.getId() + " | " + b.getTitle() + " (" + b.getAuthor() + ")");
+
+        // ---------------------------------------------------------
+        // ADIM 2: Kitabı Güncelleyelim (UPDATE)
+        // ---------------------------------------------------------
+        System.out.println("\n2️⃣  [UPDATE] Kitap bilgileri değiştiriliyor...");
+
+        // Veriyi değiştiriyoruz
+        testBook.setTitle("GÜNCELLENMİŞ KİTAP ADI");
+        testBook.setAvailable(false); // Mesela ödünç verildi gibi yapalım
+
+        boolean isUpdated = bookDAO.update(testBook);
+
+        if (isUpdated) {
+            System.out.println("✅  Update işlemi veritabanında başarılı (True döndü).");
+
+            // Şimdi gerçekten değişmiş mi diye veritabanından tekrar çekip bakalım (Verification)
+            Optional<Book> updatedBookOpt = bookDAO.getById(bookId);
+
+            updatedBookOpt.ifPresent(b -> {
+                System.out.println("    -> DB'den Gelen Başlık: " + b.getTitle());
+                System.out.println("    -> DB'den Gelen Durum: " + (b.isAvailable() ? "Müsait" : "Müsait Değil"));
+
+                if (b.getTitle().equals("GÜNCELLENMİŞ KİTAP ADI") && !b.isAvailable()) {
+                    System.out.println("    ✅  Veri bütünlüğü doğrulandı!");
+                } else {
+                    System.out.println("    ❌  HATA: Veri güncellenmemiş görünüyor!");
+                }
+            });
+
+        } else {
+            System.out.println("❌  Update işlemi başarısız oldu!");
         }
+
+        // ---------------------------------------------------------
+        // ADIM 3: Kitabı Silelim (DELETE)
+        // ---------------------------------------------------------
+        System.out.println("\n3️⃣  [DELETE] Kitap siliniyor (ID: " + bookId + ")...");
+
+        boolean isDeleted = bookDAO.delete(bookId);
+
+        if (isDeleted) {
+            System.out.println("✅  Delete işlemi veritabanında başarılı (True döndü).");
+
+            // Gerçekten silindi mi? (Verification)
+            Optional<Book> deletedBookCheck = bookDAO.getById(bookId);
+
+            if (deletedBookCheck.isEmpty()) {
+                System.out.println("    ✅  KONTROL: Veritabanında arandı ve BULUNAMADI (Optional.empty). Test Başarılı!");
+            } else {
+                System.out.println("    ❌  HATA: Kitap silinmesine rağmen hala veritabanında geliyor!");
+            }
+
+        } else {
+            System.out.println("❌  Delete işlemi başarısız oldu!");
+        }
+
+        System.out.println("\n==========================================");
+        System.out.println("🏁 TEST TAMAMLANDI");
+        System.out.println("==========================================");
     }
 }
