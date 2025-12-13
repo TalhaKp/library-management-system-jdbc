@@ -8,11 +8,11 @@ public interface IBookDAO {
 
     void add(Book book);
 
-    void update(Book book);
-
-    void delete(int id);
+    List<Book> getAll(int limit, int offset);
 
     Book getById(int id);
 
-    List<Book> getAll();
+    void update(Book book);
+
+    void delete(int id);
 }
